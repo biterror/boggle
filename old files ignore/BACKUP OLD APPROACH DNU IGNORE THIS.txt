@@ -1,0 +1,643 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Timers;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+using System.Windows.Threading;
+
+namespace Boggle
+{
+
+    class Puzzle
+    {
+        string _tile00;
+        string _tile01;
+        string _tile02;
+        string _tile03;
+        string _tile10;
+        string _tile11;
+        string _tile12;
+        string _tile13;
+        string _tile20;
+        string _tile21;
+        string _tile22;
+        string _tile23;
+        string _tile30;
+        string _tile31;
+        string _tile32;
+        string _tile33;
+        string _alltiles;
+
+        public string tile00
+        {
+            get { return _tile00; }
+            set { _tile00 = value; }
+        }
+        public string tile01
+        {
+            get { return _tile01; }
+            set { _tile01 = value; }
+        }
+        public string tile02
+        {
+            get { return _tile02; }
+            set { _tile02 = value; }
+        }
+        public string tile03
+        {
+            get { return _tile03; }
+            set { _tile03 = value; }
+        }
+        public string tile10
+        {
+            get { return _tile10; }
+            set { _tile10 = value; }
+        }
+        public string tile11
+        {
+            get { return _tile11; }
+            set { _tile11 = value; }
+        }
+        public string tile12
+        {
+            get { return _tile12; }
+            set { _tile12 = value; }
+        }
+        public string tile13
+        {
+            get { return _tile13; }
+            set { _tile13 = value; }
+        }
+        public string tile20
+        {
+            get { return _tile20; }
+            set { _tile20 = value; }
+        }
+        public string tile21
+        {
+            get { return _tile21; }
+            set { _tile21 = value; }
+        }
+        public string tile22
+        {
+            get { return _tile22; }
+            set { _tile22 = value; }
+        }
+        public string tile23
+        {
+            get { return _tile23; }
+            set { _tile23 = value; }
+        }
+        public string tile30
+        {
+            get { return _tile30; }
+            set { _tile30 = value; }
+        }
+        public string tile31
+        {
+            get { return _tile31; }
+            set { _tile31 = value; }
+        }
+        public string tile32
+        {
+            get { return _tile32; }
+            set { _tile32 = value; }
+        }
+        public string tile33
+        {
+            get { return _tile33; }
+            set { _tile33 = value; }
+        }
+        public string alltiles
+        {
+            get { return _alltiles; }
+            set { _alltiles = value; }
+        }
+
+        public Puzzle(string letters)
+        {
+            _tile00 = letters[0].ToString();
+            _tile01 = letters[1].ToString();
+            _tile02 = letters[2].ToString();
+            _tile03 = letters[3].ToString();
+            _tile10 = letters[4].ToString();
+            _tile11 = letters[5].ToString();
+            _tile12 = letters[6].ToString();
+            _tile13 = letters[7].ToString();
+            _tile20 = letters[8].ToString();
+            _tile21 = letters[9].ToString();
+            _tile22 = letters[10].ToString();
+            _tile23 = letters[11].ToString();
+            _tile30 = letters[12].ToString();
+            _tile31 = letters[13].ToString();
+            _tile32 = letters[14].ToString();
+            _tile33 = letters[15].ToString();
+            _alltiles = letters;
+        }
+
+
+    }
+
+    class Die
+    {
+        string _chars;
+        public string chars
+        {
+            get { return _chars; }
+            set { _chars = value; }
+        }
+    }
+    class Word
+    {
+        string _theword;
+        int _wordscore;
+
+        public string TheWord
+        {
+            get { return _theword; }
+            set { _theword = value; }
+        }
+        public int WordScore
+        {
+            get { return _wordscore; }
+            set { _wordscore = value; }
+        }
+        public Word(string w, int s)
+        {
+            this._theword = w;
+            this._wordscore = s;
+        }
+    }
+    /// <summary>
+    /// Interaction logic for MainWindow.xaml
+    /// </summary>
+    public partial class MainWindow : Window
+    {
+        DispatcherTimer _timer;
+        TimeSpan _time;
+        bool GameOn;
+        static Random _random = new Random();
+        static void Shuffle<T>(T[] array)
+        {
+            int n = array.Length;
+            for (int i = 0; i < n; i++)
+            {
+                int r = i + (int)(_random.NextDouble() * (n - i));
+                T t = array[r];
+                array[r] = array[i];
+                array[i] = t;
+            }
+        }
+
+        string[] DieRollsList = new string[16];
+        string[] TempIsHighlight = { "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N" };
+        string[] diechars = new string[] { "AAEEGN", "ELRTTY", "AOOTTW", "ABBJOO", "EHRTVW", "CIMOTU", "DISTTY", "EIOSST", "DELRVY", "ACHOPS", "HIMNQU", "EEINSU", "EEGHNW", "AFFKPS", "HLNNRZ", "DEILRX" };
+        List<string> BoggleDictionary = new List<string>();
+        List<Word> ListOfWordsFoundInCurrentPuzzle = new List<Word>();
+        Puzzle CurrentPuzzle;
+
+        private void LoadDictionary()
+        {
+            string[] DictionaryWords = System.IO.File.ReadAllLines(@"C:\Users\ipd\Documents\bogglerepos___\Boggle\ospd.txt");
+            foreach (string dictionaryword in DictionaryWords)
+            {
+                BoggleDictionary.Add(dictionaryword);
+            }
+        }
+
+        private void GenerateNewPuzzle()
+        {
+            for (int i = 0; i < 16; i++)
+            {
+                Die d = new Die();
+                d.chars = diechars[i];
+                Random r = new Random();
+                int ind = r.Next(0, 5);
+                DieRollsList[i] = d.chars[ind].ToString();
+            }
+            Shuffle(DieRollsList);
+            die00.Content = DieRollsList[0];
+            die01.Content = DieRollsList[1];
+            die02.Content = DieRollsList[2];
+            die03.Content = DieRollsList[3];
+            die10.Content = DieRollsList[4];
+            die11.Content = DieRollsList[5];
+            die12.Content = DieRollsList[6];
+            die13.Content = DieRollsList[7];
+            die20.Content = DieRollsList[8];
+            die21.Content = DieRollsList[9];
+            die22.Content = DieRollsList[10];
+            die23.Content = DieRollsList[11];
+            die30.Content = DieRollsList[12];
+            die31.Content = DieRollsList[13];
+            die32.Content = DieRollsList[14];
+            die33.Content = DieRollsList[15];
+            string PuzzleString = String.Join("", DieRollsList);
+            CurrentPuzzle = new Puzzle(PuzzleString);
+            WordsFoundListView.Items.Clear();
+            ListOfWordsFoundInCurrentPuzzle.Clear();
+            CurrentScoreLabel.Content = 0;
+        }
+
+        private void StartTimer()
+        {
+            TimeLabel.Content = "2:00";
+            _time = TimeSpan.FromSeconds(120);
+            TimeLabel.Foreground = Brushes.Green;
+            if (GameOn == true)
+            {
+                _timer.Stop();
+            }
+            else
+            {
+                GameOn = true;
+            }
+            _timer = new DispatcherTimer(new TimeSpan(0, 0, 1), DispatcherPriority.Normal, delegate
+            {
+                if (_time == TimeSpan.Zero)
+                {
+                    _timer.Stop();
+                    GameOn = false;
+                }
+                else
+                {
+                    _time = _time.Add(TimeSpan.FromSeconds(-1));
+                    TimeLabel.Content = _time.ToString(@"m\:ss");
+                    TimeSpan _timecheckone = TimeSpan.FromSeconds(30);
+                    TimeSpan _timechecktwo = TimeSpan.FromSeconds(10);
+                    if (_time == _timecheckone)
+                    {
+                        TimeLabel.Foreground = Brushes.Orange;
+                    }
+                    if (_time == _timechecktwo)
+                    {
+                        TimeLabel.Foreground = Brushes.Red;
+                    }
+                }
+            }, Application.Current.Dispatcher);
+            _timer.Start();
+        }
+
+        private bool ValidateWord(string w)
+        {
+            if (BoggleDictionary.Contains(w))
+            {
+                bool validinboard = ValidateWordInBoard(w);
+                return validinboard;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private bool HighLightWord(string w)
+        {
+            foreach (Label lb in DieGrid.Children)
+            {
+                    lb.Background = Brushes.White;
+            }
+            bool result = true;
+            string WordToHighLight = TypedWord.Text.ToUpper();
+
+            if (WordToHighLight.Length > 0)
+            {
+                int i = 0;
+                foreach (char c in CurrentPuzzle.alltiles)
+                {
+                    if (c == WordToHighLight[0])
+                    {
+                        TempIsHighlight[i] = "Y";
+                    }
+                    else
+                    {
+                        TempIsHighlight[i] = "N";
+                    }
+                    i++;
+                }
+                for (int n = 1; n < WordToHighLight.Length; n++)
+                {
+                    i = 0;
+                    foreach (char c in CurrentPuzzle.alltiles)
+                    {
+                        if (c == WordToHighLight[n])
+                        {
+                            TempIsHighlight[i] = "Y";
+                        }
+                        i++;
+                    }
+                    RemoveOrphanedHighlightedTiles(WordToHighLight[n].ToString(), WordToHighLight[n - 1].ToString());
+                }
+                HighLightBasedOnString();
+            }
+            return result;
+        }
+
+        private void HighLightBasedOnString()
+        {
+            if (TempIsHighlight[0] == "Y")
+            {
+                die00.Background = Brushes.LimeGreen;
+            }
+            if (TempIsHighlight[1] == "Y")
+            {
+                die01.Background = Brushes.LimeGreen;
+            }
+            if (TempIsHighlight[2] == "Y")
+            {
+                die02.Background = Brushes.LimeGreen;
+            }
+            if (TempIsHighlight[3] == "Y")
+            {
+                die03.Background = Brushes.LimeGreen;
+            }
+            if (TempIsHighlight[4] == "Y")
+            {
+                die10.Background = Brushes.LimeGreen;
+            }
+            if (TempIsHighlight[5] == "Y")
+            {
+                die11.Background = Brushes.LimeGreen;
+            }
+            if (TempIsHighlight[6] == "Y")
+            {
+                die12.Background = Brushes.LimeGreen;
+            }
+            if (TempIsHighlight[7] == "Y")
+            {
+                die13.Background = Brushes.LimeGreen;
+            }
+            if (TempIsHighlight[8] == "Y")
+            {
+                die20.Background = Brushes.LimeGreen;
+            }
+            if (TempIsHighlight[9] == "Y")
+            {
+                die21.Background = Brushes.LimeGreen;
+            }
+            if (TempIsHighlight[10] == "Y")
+            {
+                die22.Background = Brushes.LimeGreen;
+            }
+            if (TempIsHighlight[11] == "Y")
+            {
+                die23.Background = Brushes.LimeGreen;
+            }
+            if (TempIsHighlight[12] == "Y")
+            {
+                die30.Background = Brushes.LimeGreen;
+            }
+            if (TempIsHighlight[13] == "Y")
+            {
+                die31.Background = Brushes.LimeGreen;
+            }
+            if (TempIsHighlight[14] == "Y")
+            {
+                die32.Background = Brushes.LimeGreen;
+            }
+            if (TempIsHighlight[15] == "Y")
+            {
+                die33.Background = Brushes.LimeGreen;
+            }
+
+
+        }
+
+        private void RemoveOrphanedHighlightedTiles(string l1, string l2)
+        {
+            if ((TempIsHighlight[0] == l2) &&
+                (TempIsHighlight[1] == l1) &&
+                (TempIsHighlight[4] == l1) &&
+                (TempIsHighlight[5] == l1))
+            {
+                TempIsHighlight[0] = "N";
+            }
+            if ((TempIsHighlight[3] == l2) &&
+                (TempIsHighlight[2] == l1) &&
+                (TempIsHighlight[6] == l1) &&
+                (TempIsHighlight[7] == l1))
+            {
+                TempIsHighlight[3] = "N";
+            }
+            if ((TempIsHighlight[12] == l2) &&
+                (TempIsHighlight[8] == l1) &&
+                (TempIsHighlight[9] == l1) &&
+                (TempIsHighlight[13] == l1))
+            {
+                TempIsHighlight[12] = "N";
+            }
+            if ((TempIsHighlight[15] == l2) &&
+                (TempIsHighlight[10] == l1) &&
+                (TempIsHighlight[11] == l1) &&
+                (TempIsHighlight[14] == l1))
+            {
+                TempIsHighlight[15] = "N";
+            }
+
+
+            if ((TempIsHighlight[1] == l2) &&
+                (TempIsHighlight[0] == l1) &&
+                (TempIsHighlight[2] == l1) &&
+                (TempIsHighlight[4] == l1) &&
+                (TempIsHighlight[5] == l1) &&
+                (TempIsHighlight[6] == l1))
+            {
+                TempIsHighlight[1] = "N";
+            }
+            if ((TempIsHighlight[2] == l2) &&
+                (TempIsHighlight[1] == l1) &&
+                (TempIsHighlight[3] == l1) &&
+                (TempIsHighlight[5] == l1) &&
+                (TempIsHighlight[6] == l1) &&
+                (TempIsHighlight[7] == l1))
+            {
+                TempIsHighlight[2] = "N";
+            }
+            if ((TempIsHighlight[4] == l2) &&
+                (TempIsHighlight[0] == l1) &&
+                (TempIsHighlight[1] == l1) &&
+                (TempIsHighlight[5] == l1) &&
+                (TempIsHighlight[8] == l1) &&
+                (TempIsHighlight[9] == l1))
+            {
+                TempIsHighlight[4] = "N";
+            }
+            if ((TempIsHighlight[8] == l2) &&
+                (TempIsHighlight[4] == l1) &&
+                (TempIsHighlight[5] == l1) &&
+                (TempIsHighlight[9] == l1) &&
+                (TempIsHighlight[12] == l1) &&
+                (TempIsHighlight[13] == l1))
+            {
+                TempIsHighlight[8] = "N";
+            }
+            if ((TempIsHighlight[7] == l2) &&
+                (TempIsHighlight[2] == l1) &&
+                (TempIsHighlight[3] == l1) &&
+                (TempIsHighlight[6] == l1) &&
+                (TempIsHighlight[10] == l1) &&
+                (TempIsHighlight[11] == l1))
+            {
+                TempIsHighlight[7] = "N";
+            }
+            if ((TempIsHighlight[11] == l2) &&
+                (TempIsHighlight[6] == l1) &&
+                (TempIsHighlight[7] == l1) &&
+                (TempIsHighlight[10] == l1) &&
+                (TempIsHighlight[14] == l1) &&
+                (TempIsHighlight[15] == l1))
+            {
+                TempIsHighlight[11] = "N";
+            }
+            if ((TempIsHighlight[13] == l2) &&
+                (TempIsHighlight[8] == l1) &&
+                (TempIsHighlight[9] == l1) &&
+                (TempIsHighlight[10] == l1) &&
+                (TempIsHighlight[12] == l1) &&
+                (TempIsHighlight[14] == l1))
+            {
+                TempIsHighlight[13] = "N";
+            }
+            if ((TempIsHighlight[14] == l2) &&
+                (TempIsHighlight[9] == l1) &&
+                (TempIsHighlight[10] == l1) &&
+                (TempIsHighlight[11] == l1) &&
+                (TempIsHighlight[13] == l1) &&
+                (TempIsHighlight[15] == l1))
+            {
+                TempIsHighlight[14] = "N";
+            }
+
+            if ((TempIsHighlight[5] == l2) &&
+            (TempIsHighlight[0] == l1) &&
+            (TempIsHighlight[1] == l1) &&
+            (TempIsHighlight[2] == l1) &&
+            (TempIsHighlight[4] == l1) &&
+            (TempIsHighlight[6] == l1) &&
+            (TempIsHighlight[8] == l1) &&
+            (TempIsHighlight[9] == l1) &&
+            (TempIsHighlight[10] == l1))
+            {
+                TempIsHighlight[5] = "N";
+            }
+            if ((TempIsHighlight[6] == l2) &&
+                (TempIsHighlight[1] == l1) &&
+                (TempIsHighlight[2] == l1) &&
+                (TempIsHighlight[3] == l1) &&
+                (TempIsHighlight[5] == l1) &&
+                (TempIsHighlight[7] == l1) &&
+                (TempIsHighlight[9] == l1) &&
+                (TempIsHighlight[10] == l1) &&
+                (TempIsHighlight[11] == l1))
+            {
+                TempIsHighlight[6] = "N";
+            }
+            if ((TempIsHighlight[9] == l2) &&
+                (TempIsHighlight[4] == l1) &&
+                (TempIsHighlight[5] == l1) &&
+                (TempIsHighlight[6] == l1) &&
+                (TempIsHighlight[8] == l1) &&
+                (TempIsHighlight[10] == l1) &&
+                (TempIsHighlight[12] == l1) &&
+                (TempIsHighlight[13] == l1) &&
+                (TempIsHighlight[14] == l1))
+            {
+                TempIsHighlight[9] = "N";
+            }
+            if ((TempIsHighlight[10] == l2) &&
+                (TempIsHighlight[5] == l1) &&
+                (TempIsHighlight[6] == l1) &&
+                (TempIsHighlight[7] == l1) &&
+                (TempIsHighlight[9] == l1) &&
+                (TempIsHighlight[11] == l1) &&
+                (TempIsHighlight[13] == l1) &&
+                (TempIsHighlight[14] == l1) &&
+                (TempIsHighlight[15] == l1))
+            {
+                TempIsHighlight[10] = "N";
+            }
+
+        }
+
+        private bool ValidateWordInBoard(string w)
+        {
+            return true;
+        }
+
+        private void AddWordToScore(string w)
+        {
+            int score = 0;
+            int totalscore = 0;
+            if (w.Length < 5)
+            {
+                score = 1;
+            } else if (w.Length < 6)
+            {
+                score = 2;
+            } else if (w.Length < 7)
+            {
+                score = 3;
+            } else if (w.Length < 8)
+            {
+                score = 5;
+            } else
+            {
+                score = 11;
+            }
+            Word word = new Word(w, score);
+            List<string> TempCheck = new List<string>();
+            foreach (Word wt in ListOfWordsFoundInCurrentPuzzle) 
+            {
+                TempCheck.Add(wt.TheWord);
+            }
+            if (!TempCheck.Contains(w))
+            {
+                ListOfWordsFoundInCurrentPuzzle.Add(word);
+                WordsFoundListView.Items.Add(word);
+                foreach (Word ws in ListOfWordsFoundInCurrentPuzzle)
+                {
+                    totalscore = totalscore + ws.WordScore;
+                }
+                CurrentScoreLabel.Content = totalscore;
+            }
+        }
+
+        public MainWindow()
+        {
+            InitializeComponent();
+            LoadDictionary();
+        }
+
+        private void StartButton_Click(object sender, RoutedEventArgs e)
+        {
+            GenerateNewPuzzle();
+            StartTimer();
+            TypedWord.Focus();
+        }
+
+        private void TypedWord_KeyUp(object sender, KeyEventArgs e)
+        {
+            HighLightWord(TypedWord.Text.ToUpper());
+            if ((e.Key == Key.Enter) && (GameOn == true))
+            {
+                string WordInput = TypedWord.Text.ToUpper();
+                TypedWord.Text = "";
+                bool valid = ValidateWord(WordInput);
+                if (valid == true)
+                {
+                    AddWordToScore(WordInput);
+                }
+            }
+        }
+    }
+}

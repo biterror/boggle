@@ -1,0 +1,16 @@
+﻿<Window x:Class="Boggle.GameChooser"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="GameChooser" Height="300" Width="300" ResizeMode="NoResize">
+    <Grid Background="#FF14A6D4">
+        <DataGrid HorizontalAlignment="Left" VerticalAlignment="Top" Height="225" Width="270" DataContext="{Binding Source=Board}" Name="BoardsGrid" AutoGenerateColumns="False" CanUserResizeColumns="True" Margin="10,10,0,0" IsReadOnly="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Binding="{Binding Path=BoardId}" Width="50"/>
+                <DataGridTextColumn Header="Name" Binding="{Binding Path=HScoreName}" Width="150"/>
+                <DataGridTextColumn Header="Score" Binding="{Binding Path=HScore}" Width="60" SortDirection="Descending"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <Button Content="Replay" HorizontalAlignment="Left" Margin="80,240,0,0" VerticalAlignment="Top" Width="120" Height="30" Background="#FFC01E1E" FontWeight="Bold" FontSize="14.667" Click="Replay_Click"/>
+
+    </Grid>
+</Window>
